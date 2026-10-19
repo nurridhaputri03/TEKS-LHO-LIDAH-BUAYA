@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lidah Buaya Interaktif</title>
+<style>
+:root{--bg:#eef6ec;--bg2:#d6ebd0;--card:#ffffff;--text:#1d3320;--muted:#52695a;--accent:#2f8a3e;--line:#c4dcc0;--chip:#e3f1df;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1b12;--bg2:#1b3322;--card:#18271c;--text:#e6f3e6;--muted:#9bb5a2;--accent:#5fcf74;--line:#2c4733;--chip:#203428}}
+:root[data-theme="dark"]{--bg:#0f1b12;--bg2:#1b3322;--card:#18271c;--text:#e6f3e6;--muted:#9bb5a2;--accent:#5fcf74;--line:#2c4733;--chip:#203428}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 40px}
+h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.3rem);color:var(--accent)}
+.sub{margin:0 0 16px;color:var(--muted);max-width:720px}
+#stage{position:relative;height:min(62vh,560px);min-height:420px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(circle at 50% 35%,var(--bg2),var(--bg) 75%);touch-action:none}
+#stage canvas{display:block;width:100%;height:100%}
+.hs{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:2px solid #fff;background:var(--accent);color:#fff;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:p 2s infinite;padding:0}
+.hs.on{background:#e8742a;transform:scale(1.2);animation:none}
+@keyframes p{0%{box-shadow:0 0 0 0 rgba(47,138,62,.6)}70%{box-shadow:0 0 0 12px rgba(47,138,62,0)}100%{box-shadow:0 0 0 0 rgba(47,138,62,0)}}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 14px;border-radius:999px;font:inherit;font-size:.92rem;cursor:pointer}
+.btn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--text);padding:8px 14px;border-radius:12px;font:inherit;font-weight:600;font-size:.88rem;cursor:pointer}
+.chip.on{background:#e8742a;color:#fff;border-color:#e8742a}
+#info{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;min-height:110px}
+#info h2{margin:0 0 6px;font-size:1.3rem;color:var(--accent)}
+#info p{margin:0}
+.hint{color:var(--muted)}
+#card{position:absolute;z-index:20;left:10px;right:10px;bottom:10px;max-height:48%;overflow:auto;background:var(--card);color:var(--text);border:2px solid var(--accent);border-radius:14px;padding:12px 40px 12px 16px;box-shadow:0 6px 24px rgba(0,0,0,.3)}
+#card[hidden]{display:none}
+#card h2{margin:0 0 4px;font-size:1.15rem;color:var(--accent)}
+#card p{margin:0;font-size:.95rem}
+#cardX{position:absolute;top:6px;right:8px;width:30px;height:30px;border:0;border-radius:50%;background:var(--chip);color:var(--text);font-size:20px;line-height:1;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Lidah Buaya Interaktif</h1>
+  <p class="sub">Jelajahi bagian-bagian tanaman lidah buaya (<i>Aloe vera</i>) dalam bentuk 3D. Seret objek untuk memutar, cubit atau scroll untuk zoom, lalu ketuk titik bernomor untuk membaca penjelasannya.</p>
+  <div id="stage"><div id="card" hidden><button id="cardX" aria-label="Tutup">×</button><h2 id="cardT"></h2><p id="cardD"></p></div></div>
+  <div class="bar">
+    <button class="btn" id="bAuto" aria-pressed="false">⟳ Putar Otomatis</button>
+    <button class="btn" id="bL">◀ Putar Kiri</button>
+    <button class="btn" id="bR">Putar Kanan ▶</button>
+    <button class="btn" id="bTxt" aria-pressed="true">Teks 3D: Tampil</button>
+    <button class="btn" id="bDot" aria-pressed="true">Titik Info: Tampil</button>
+    <button class="btn" id="bReset">Reset</button>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div id="info"><p class="hint">Ketuk titik bernomor 1–5 pada tanaman (atau tombol di atas) untuk melihat penjelasan tiap bagian.</p></div>
+</div>
+
+<script>
+var S={auto:false,rot:0,dots:true,txt:true,reset:false};
+var DATA=[
+ {t:"1. AKAR",d:"Akar lidah buaya adalah akar serabut yang tumbuh dangkal dan menyebar. Fungsinya menyerap air serta mineral dari tanah, menopang tanaman agar tegak, dan membantu menyimpan cadangan air."},
+ {t:"2. BATANG",d:"Batang lidah buaya pendek dan tebal sehingga hampir tidak terlihat karena tertutup pangkal daun. Batang menyalurkan air dan zat makanan, serta menjadi tempat daun tersusun melingkar seperti roset."},
+ {t:"3. DAUN",d:"Daun tebal, berdaging, runcing seperti tombak, dengan tepi bergerigi berduri lunak. Daun menyimpan air (tanaman sukulen) dan menjadi tempat fotosintesis, sehingga lidah buaya tahan kering."},
+ {t:"4. GEL ALOE",d:"Gel adalah daging bening berlendir di dalam daun. Kandungan utamanya air (lebih dari 95%), ditambah polisakarida, vitamin, dan enzim. Gel berfungsi menyimpan air dan banyak dimanfaatkan untuk perawatan kulit."},
+ {t:"5. BUNGA",d:"Bunga berbentuk tabung berwarna kuning hingga oranye, tersusun seperti tandan pada tangkai yang menjulang tinggi. Bunga adalah alat perkembangbiakan generatif dan menarik burung serta lebah sebagai penyerbuk."}
+];
+function pick(i){
+  document.querySelectorAll('.hs').forEach(function(h,j){h.classList.toggle('on',i===j)});
+  document.querySelectorAll('.chip').forEach(function(c,j){c.classList.toggle('on',i===j)});
+  var info=document.getElementById('info');
+  info.innerHTML='<h2></h2><p></p>';info.firstChild.textContent=DATA[i].t;info.lastChild.textContent=DATA[i].d;
+  document.getElementById('cardT').textContent=DATA[i].t;
+  document.getElementById('cardD').textContent=DATA[i].d;
+  document.getElementById('card').hidden=false;
+  document.getElementById('stage').scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+document.getElementById('cardX').onclick=function(){document.getElementById('card').hidden=true};
+(function(){
+  var chips=document.getElementById('chips');
+  DATA.forEach(function(d,i){var b=document.createElement('button');b.className='chip';b.textContent=d.t;b.onclick=function(){pick(i)};chips.appendChild(b)});
+  var g=function(id){return document.getElementById(id)};
+  g('bAuto').onclick=function(e){S.auto=!S.auto;e.currentTarget.setAttribute('aria-pressed',S.auto)};
+  g('bL').onclick=function(){S.rot-=Math.PI/4};
+  g('bR').onclick=function(){S.rot+=Math.PI/4};
+  g('bTxt').onclick=function(e){S.txt=!S.txt;e.currentTarget.setAttribute('aria-pressed',S.txt);e.currentTarget.textContent='Teks 3D: '+(S.txt?'Tampil':'Sembunyi')};
+  g('bDot').onclick=function(e){S.dots=!S.dots;e.currentTarget.setAttribute('aria-pressed',S.dots);e.currentTarget.textContent='Titik Info: '+(S.dots?'Tampil':'Sembunyi')};
+  g('bReset').onclick=function(){S.rot=0;S.auto=false;S.reset=true;g('bAuto').setAttribute('aria-pressed',false)};
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+var UNUSED=[
+ {t:"1. AKAR",d:"Akar lidah buaya adalah akar serabut yang tumbuh dangkal dan menyebar. Fungsinya menyerap air serta mineral dari tanah, menopang tanaman agar tegak, dan membantu menyimpan cadangan air."},
+ {t:"2. BATANG",d:"Batang lidah buaya pendek dan tebal sehingga hampir tidak terlihat karena tertutup pangkal daun. Batang menyalurkan air dan zat makanan, serta menjadi tempat daun tersusun melingkar seperti roset."},
+ {t:"3. DAUN",d:"Daun tebal, berdaging, runcing seperti tombak, dengan tepi bergerigi berduri lunak. Daun menyimpan air (tanaman sukulen) dan menjadi tempat fotosintesis, sehingga lidah buaya tahan kering."},
+ {t:"4. GEL ALOE",d:"Gel adalah daging bening berlendir di dalam daun. Kandungan utamanya air (lebih dari 95%), ditambah polisakarida, vitamin, dan enzim. Gel berfungsi menyimpan air dan banyak dimanfaatkan untuk perawatan kulit."},
+ {t:"5. BUNGA",d:"Bunga berbentuk tabung berwarna kuning hingga oranye, tersusun seperti tandan pada tangkai yang menjulang tinggi. Bunga adalah alat perkembangbiakan generatif dan menarik burung serta lebah sebagai penyerbuk."}
+];
+const T=THREE, stage=document.getElementById('stage');
+const renderer=new T.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+stage.appendChild(renderer.domElement);
+const scene=new T.Scene();
+const camera=new T.PerspectiveCamera(45,1,0.1,100);
+const controls=new T.OrbitControls(camera,renderer.domElement);
+controls.enablePan=false;controls.enableDamping=true;controls.minDistance=6;controls.maxDistance=24;controls.maxPolarAngle=Math.PI*0.62;
+scene.add(new T.HemisphereLight(0xffffff,0x6a8a5a,0.9));
+const sun=new T.DirectionalLight(0xffffff,0.9);sun.position.set(5,9,7);scene.add(sun);
+
+const plant=new T.Group();scene.add(plant);
+const M=(c,o={})=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.7},o));
+
+/* pot, soil */
+const terra=0xc0653a;
+const pot=new T.Mesh(new T.CylinderGeometry(1.7,1.3,1.9,36,1,true),M(terra,{transparent:true,opacity:.3,side:T.DoubleSide}));
+pot.position.y=-1.05;plant.add(pot);
+const rim=new T.Mesh(new T.TorusGeometry(1.7,.07,8,40),M(terra));rim.rotation.x=Math.PI/2;rim.position.y=-.1;plant.add(rim);
+const soil=new T.Mesh(new T.CylinderGeometry(1.62,1.25,1.8,36),M(0x5a3b26,{transparent:true,opacity:.55}));
+soil.position.y=-1.05;plant.add(soil);
+const base=new T.Mesh(new T.CylinderGeometry(1.3,1.3,.08,36),M(terra));base.position.y=-2;plant.add(base);
+
+/* roots */
+for(let i=0;i<16;i++){
+  const a=i/16*Math.PI*2+Math.random()*.3,r1=.35+Math.random()*.3,r2=.8+Math.random()*.5,r3=1+Math.random()*.4;
+  const c=new T.CatmullRomCurve3([new T.Vector3(0,-.1,0),new T.Vector3(Math.cos(a)*r1,-.6,Math.sin(a)*r1),new T.Vector3(Math.cos(a)*r2,-1.2-Math.random()*.2,Math.sin(a)*r2),new T.Vector3(Math.cos(a+.3)*r3,-1.75,Math.sin(a+.3)*r3)]);
+  plant.add(new T.Mesh(new T.TubeGeometry(c,18,.032,5),M(0xe3c595)));
+}
+
+/* stem */
+const stem=new T.Mesh(new T.CylinderGeometry(.2,.3,1,16),M(0x8a9a52));stem.position.y=.35;plant.add(stem);
+
+/* leaves */
+const leafMat=M(0x4f9a4a,{side:T.DoubleSide,roughness:.55});
+function leaf(len,wid,phi0,curl,az){
+  const N=18,K=6,pos=[],idx=[];let r=.12,y=.75,mid=null;
+  for(let i=0;i<=N;i++){
+    const t=i/N,phi=phi0-curl*t;
+    if(i>0){const s=len/N;r+=Math.cos(phi)*s;y+=Math.sin(phi)*s}
+    const w=wid*Math.pow(1-t,.6)*Math.min(1,.4+t*5),nx=-Math.sin(phi),ny=Math.cos(phi);
+    for(let j=0;j<=K;j++){
+      const u=j/K*2-1,d=.16*w*u*u*2;
+      pos.push(r+nx*d,y+ny*d,u*w);
+    }
+    if(i===9)mid=new T.Vector3(r,y,0);
+  }
+  for(let i=0;i<N;i++)for(let j=0;j<K;j++){const a=i*(K+1)+j,b=a+K+1;idx.push(a,b,a+1,b,b+1,a+1)}
+  const g=new T.BufferGeometry();
+  g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();g.rotateY(az);
+  plant.add(new T.Mesh(g,leafMat));
+  return mid.applyAxisAngle(new T.Vector3(0,1,0),az);
+}
+const ring=[[5,1.25,.5,2.0,.5],[6,.9,.8,2.5,.62],[7,.55,1.0,2.7,.7]];
+let leafAnchor;
+ring.forEach((c,k)=>{for(let i=0;i<c[0];i++){const m=leaf(c[3],c[4],c[1],c[2],i/c[0]*Math.PI*2+k*.55);if(k==2&&i==1)leafAnchor=m}});
+
+/* flower stalk */
+const fc=new T.CatmullRomCurve3([new T.Vector3(0,.7,0),new T.Vector3(.3,2,.2),new T.Vector3(.55,3.3,.1),new T.Vector3(.4,4.1,0)]);
+plant.add(new T.Mesh(new T.TubeGeometry(fc,24,.045,6),M(0x8aa04a)));
+for(let i=0;i<16;i++){
+  const t=.7+i/16*.3,p=fc.getPoint(t),a=i*2.4,k=i/16;
+  const col=new T.Color(0xf26a2a).lerp(new T.Color(0xf7c52a),k);
+  const m=new T.Mesh(new T.CylinderGeometry(.06,.1,.42,10),M(col));
+  m.position.set(p.x+Math.cos(a)*.14,p.y-.1,p.z+Math.sin(a)*.14);
+  m.rotation.set(Math.sin(a)*.5,0,-Math.cos(a)*.5);plant.add(m);
+}
+
+/* cut leaf with gel */
+const cut=new T.Group();cut.position.set(2.9,-1.9,.9);cut.rotation.y=-.5;plant.add(cut);
+cut.add(new T.Mesh(new T.BoxGeometry(1.5,.18,.8),M(0x4f9a4a)));
+const gel=new T.Mesh(new T.BoxGeometry(1.3,.3,.6),M(0xd8f5d0,{transparent:true,opacity:.8,roughness:.2}));gel.position.y=.22;cut.add(gel);
+for(let i=0;i<6;i++){for(const s of[-1,1]){const c=new T.Mesh(new T.ConeGeometry(.03,.09,5),M(0xf1f1d0));c.position.set(-.6+i*.24,.02,s*.42);c.rotation.x=s*Math.PI/2;cut.add(c)}}
+const gelAnchor=new T.Vector3(2.9,-1.5,.9);
+
+/* ground shadow */
+const sh=new T.Mesh(new T.CircleGeometry(4.2,40),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.12}));
+sh.rotation.x=-Math.PI/2;sh.position.y=-2.02;scene.add(sh);
+
+/* 3D text labels (sprites) */
+function label(title,rows,hex){
+  const c=document.createElement('canvas');c.width=640;c.height=560;const x=c.getContext('2d');
+  x.fillStyle='rgba(255,255,255,.95)';x.strokeStyle=hex;x.lineWidth=8;
+  x.beginPath();x.roundRect?x.roundRect(8,8,624,544,36):x.rect(8,8,624,544);x.fill();x.stroke();
+  x.fillStyle=hex;x.font='bold 46px system-ui,Arial,sans-serif';x.fillText(title,36,78);
+  x.fillRect(36,98,568,4);x.fillStyle='#1d3320';x.font='31px system-ui,Arial,sans-serif';
+  rows.forEach((r,i)=>x.fillText(r,36,150+i*58));
+  const s=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),transparent:true}));
+  s.scale.set(3.4,3.4*560/640,1);return s;
+}
+const sKl=label("KLASIFIKASI",["Kingdom : Plantae","Divisi : Magnoliophyta","Kelas : Liliopsida","Ordo : Asparagales","Famili : Asphodelaceae","Genus : Aloe","Spesies : Aloe vera"],"#2f8a3e");
+const sMf=label("MANFAAT",["• Melembapkan kulit","• Menenangkan kulit terbakar","  matahari ringan","• Bahan sampo & kosmetik","• Minuman / nata de aloe","• Tanaman hias di rumah","• Tahan kering, mudah dirawat"],"#e8742a");
+scene.add(sKl,sMf);
+
+/* hotspots */
+const anchors=[new T.Vector3(.5,-1.1,.8),new T.Vector3(.2,.35,.28),leafAnchor,gelAnchor,fc.getPoint(.88)];
+const hs=anchors.map((_,i)=>{const b=document.createElement('button');b.className='hs';b.textContent=i+1;b.setAttribute('aria-label',DATA[i].t);b.onclick=()=>pick(i);stage.appendChild(b);return b});
+
+
+/* controls */
+
+
+function layout(){
+  const w=stage.clientWidth,h=stage.clientHeight,asp=w/h;
+  renderer.setSize(w,h);camera.aspect=asp;
+  if(asp>=1.15){sKl.position.set(-5.4,1.8,0);sMf.position.set(5.4,1.8,0);camera.position.set(0,2.6,Math.max(12,8.2/(Math.tan(Math.PI/8)*asp)));controls.target.set(0,1.2,0)}
+  else{sKl.position.set(-1.9,-4.6,0);sMf.position.set(1.9,-4.6,0);camera.position.set(0,1.5,Math.max(15,4.4/(Math.tan(Math.PI/8)*asp)));controls.target.set(0,-.2,0)}
+  camera.updateProjectionMatrix();controls.update();
+}
+new ResizeObserver(layout).observe(stage);layout();
+
+const v=new T.Vector3();
+(function loop(){
+  requestAnimationFrame(loop);
+  if(S.auto)S.rot+=.006;
+  if(S.reset){S.reset=false;plant.rotation.y=0;layout()}
+  sKl.visible=sMf.visible=S.txt;
+  plant.rotation.y+=(S.rot-plant.rotation.y)*.12;
+  controls.update();renderer.render(scene,camera);
+  const w=stage.clientWidth,h=stage.clientHeight;
+  anchors.forEach((a,i)=>{
+    v.copy(a);plant.localToWorld(v);v.project(camera);
+    hs[i].style.display=(S.dots&&v.z<1)?'block':'none';
+    hs[i].style.left=((v.x+1)/2*w)+'px';hs[i].style.top=((1-v.y)/2*h)+'px';
+  });
+})();
+</script>
+</body>
+</html>
